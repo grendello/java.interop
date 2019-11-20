@@ -269,12 +269,14 @@ namespace Java.Interop.Tools.TypeNameMappings
 		// Keep in sync with ToJniNameFromAttributes(TypeDefinition)
 		public static string ToJniNameFromAttributes (Type type)
 		{
-			IList<CustomAttributeData> caData = type.GetCustomAttributesData ();
+			IList<CustomAttributeData> caData = CustomAttributeData.GetCustomAttributes (type);
 			if (caData == null || caData.Count == 0)
 				return null;
 
 			string name = null;
 			foreach (CustomAttributeData cad in caData) {
+				Console.WriteLine ($"cad == {cad}");
+				Console.WriteLine ($"cad.Constructor == {cad.Constructor}");
 				if (cad.AttributeType == null || !cad.AttributeType.IsAssignableFrom (typeof (IJniNameProviderAttribute)) || cad.ConstructorArguments == null || cad.ConstructorArguments.Count == 0)
 					continue;
 
