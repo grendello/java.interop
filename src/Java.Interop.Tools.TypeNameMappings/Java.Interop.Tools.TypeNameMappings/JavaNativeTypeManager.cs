@@ -269,8 +269,29 @@ namespace Java.Interop.Tools.TypeNameMappings
 		// Keep in sync with ToJniNameFromAttributes(TypeDefinition)
 		public static string ToJniNameFromAttributes (Type type)
 		{
-			var aa = (IJniNameProviderAttribute []) type.GetCustomAttributes (typeof (IJniNameProviderAttribute), inherit: false);
-			return aa.Length > 0 && !string.IsNullOrEmpty (aa [0].Name) ? aa [0].Name.Replace ('.', '/') : null;
+			IList<CustomAttributeData> caData = type.GetCustomAttributesData ();
+			if (caData == null || caData.Count == 0)
+				return null;
+
+			string name = null;
+			foreach (CustomAttributeData cad in caData) {
+				if (cad.AttributeType == null || !cad.AttributeType.IsAssignableFrom (typeof (IJniNameProviderAttribute)) || cad.ConstructorArguments == null || cad.ConstructorArguments.Count == 0)
+					continue;
+
+				foreach (CustomAttributeTypedArgument arg in cad.ConstructorArguments) {
+					if (arg.ArgumentType != typeof (string))
+						continue;
+					name = (string)arg.Value;
+				}
+
+				if (!String.IsNullOrEmpty (name))
+					break;
+			}
+
+			if (String.IsNullOrEmpty (name))
+				return null;
+
+			return name.Replace ('.', '/');
 		}
 
 		/*
@@ -615,5 +636,3 @@ namespace Java.Interop.Tools.TypeNameMappings
 		}
 	}
 }
-
-
