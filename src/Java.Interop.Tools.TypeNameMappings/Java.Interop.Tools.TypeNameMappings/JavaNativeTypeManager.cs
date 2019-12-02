@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -273,10 +274,17 @@ namespace Java.Interop.Tools.TypeNameMappings
 			if (caData == null || caData.Count == 0)
 				return null;
 
+			const string log = "/tmp/tm.txt";
+			File.AppendAllText (log, $"Type '{type}'; Custom attributes:");
 			string name = null;
 			foreach (CustomAttributeData cad in caData) {
-				Console.WriteLine ($"cad == {cad}");
-				Console.WriteLine ($"cad.Constructor == {cad.Constructor}");
+				File.AppendAllLines (log, new [] {
+					$"  cad == {cad}",
+					$"  cad.Constructor == {cad.Constructor}",
+					$"  cad.AttributeType == {cad.AttributeType}",
+					$"  cad.ConstructorArguments == {cad.ConstructorArguments?.Count}"
+				});
+				
 				if (cad.AttributeType == null || !typeof (IJniNameProviderAttribute).IsAssignableFrom (cad.AttributeType) || cad.ConstructorArguments == null || cad.ConstructorArguments.Count == 0)
 					continue;
 
