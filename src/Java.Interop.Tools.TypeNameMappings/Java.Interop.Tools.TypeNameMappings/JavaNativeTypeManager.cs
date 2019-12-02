@@ -277,7 +277,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 			foreach (CustomAttributeData cad in caData) {
 				Console.WriteLine ($"cad == {cad}");
 				Console.WriteLine ($"cad.Constructor == {cad.Constructor}");
-				if (cad.AttributeType == null || !cad.AttributeType.IsAssignableFrom (typeof (IJniNameProviderAttribute)) || cad.ConstructorArguments == null || cad.ConstructorArguments.Count == 0)
+				if (cad.AttributeType == null || !typeof (IJniNameProviderAttribute).IsAssignableFrom (cad.AttributeType) || cad.ConstructorArguments == null || cad.ConstructorArguments.Count == 0)
 					continue;
 
 				foreach (CustomAttributeTypedArgument arg in cad.ConstructorArguments) {
