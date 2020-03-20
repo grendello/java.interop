@@ -169,6 +169,7 @@ namespace Java.Interop {
 					throw new ArgumentNullException (nameof (type));
 				if (type.IsArray)
 					throw new ArgumentException ("Array type '" + type.FullName + "' is not supported.", nameof (type));
+				JniRuntime.monodroid_log (LogLevel.Info, LogCategories.Default, "Returning EmptyStringArray");
 				return EmptyStringArray;
 			}
 
@@ -187,8 +188,10 @@ namespace Java.Interop {
 			{
 				AssertValid ();
 
-				if (typeSignature.SimpleReference == null)
+				if (typeSignature.SimpleReference == null) {
+					JniRuntime.monodroid_log (LogLevel.Info, LogCategories.Default, "Returning EmptyTypeArray");
 					return EmptyTypeArray;
+				}
 				return CreateGetTypesEnumerator (typeSignature);
 			}
 
@@ -276,7 +279,7 @@ namespace Java.Interop {
 				return TryRegisterNativeMembers (nativeClass, marshalType, methods, registerMethod);
 			}
 
-			static List<JniNativeMethodRegistration> sharedRegistrations = new List<JniNativeMethodRegistration> ();
+			static List<JniNativeMethodRegistration> sharedRegistrations;
 
 			bool TryRegisterNativeMembers (JniType nativeClass, Type marshalType, string? methods, MethodInfo? registerMethod)
 			{
@@ -287,7 +290,10 @@ namespace Java.Interop {
 					Monitor.TryEnter (sharedRegistrations, ref lockTaken);
 					List<JniNativeMethodRegistration> registrations;
 					if (lockTaken) {
-						sharedRegistrations.Clear ();
+						if (sharedRegistrations == null)
+							sharedRegistrations = new List<JniNativeMethodRegistration> ();
+						else
+							sharedRegistrations.Clear ();
 						registrations = sharedRegistrations;
 					} else {
 						registrations = new List<JniNativeMethodRegistration> ();

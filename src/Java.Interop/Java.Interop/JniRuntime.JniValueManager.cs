@@ -246,14 +246,28 @@ namespace Java.Interop
 					: null;
 			}
 
-			static  readonly    KeyValuePair<Type, Type>[]      PeerTypeMappings = new []{
-				new KeyValuePair<Type, Type>(typeof (object),           typeof (JavaObject)),
-				new KeyValuePair<Type, Type>(typeof (IJavaPeerable),    typeof (JavaObject)),
-				new KeyValuePair<Type, Type>(typeof (Exception),        typeof (JavaException)),
-			};
+			static  readonly    object            peerInitLock = new Object ();
+			static  KeyValuePair<Type, Type>[]    PeerTypeMappings;
+			static  Type                          ByRefJniObjectReference;
 
 			static Type GetPeerType (Type type)
 			{
+				if (PeerTypeMappings == null || ByRefJniObjectReference == null) {
+					lock (peerInitLock) {
+						if (PeerTypeMappings == null) {
+							PeerTypeMappings = new []{
+								new KeyValuePair<Type, Type>(typeof (object),           typeof (JavaObject)),
+								new KeyValuePair<Type, Type>(typeof (IJavaPeerable),    typeof (JavaObject)),
+								new KeyValuePair<Type, Type>(typeof (Exception),        typeof (JavaException)),
+							};
+						}
+
+						if (ByRefJniObjectReference == null) {
+							ByRefJniObjectReference = typeof (JniObjectReference).MakeByRefType ();
+						}
+					}
+				}
+
 				foreach (var m in PeerTypeMappings) {
 					if (m.Key == type)
 						return m.Value;
@@ -289,8 +303,6 @@ namespace Java.Interop
 					reference   = (JniObjectReference) acts [0];
 				}
 			}
-
-			static  readonly    Type    ByRefJniObjectReference = typeof (JniObjectReference).MakeByRefType ();
 
 			ConstructorInfo? GetPeerConstructor (JniObjectReference instance, Type fallbackType)
 			{

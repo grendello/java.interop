@@ -8,27 +8,8 @@ namespace Java.Interop
 {
 	partial class JniEnvironment {
 		static partial class Types {
-
-			readonly    static  KeyValuePair<string, string>[]  BuiltinMappings = new KeyValuePair<string, string>[] {
-				new KeyValuePair<string, string>("byte",       "B"),
-				new KeyValuePair<string, string>("boolean",    "Z"),
-				new KeyValuePair<string, string>("char",       "C"),
-				new KeyValuePair<string, string>("double",     "D"),
-				new KeyValuePair<string, string>("float",      "F"),
-				new KeyValuePair<string, string>("int",        "I"),
-				new KeyValuePair<string, string>("long",       "J"),
-				new KeyValuePair<string, string>("short",      "S"),
-				new KeyValuePair<string, string>("void",       "V"),
-			};
-
-			static  readonly    JniMethodInfo           Class_getName;
-
-			static Types ()
-			{
-				using (var t = new JniType ("java/lang/Class")) {
-					Class_getName   = t.GetInstanceMethod ("getName", "()Ljava/lang/String;");
-				}
-			}
+			static readonly object initLock = new object ();
+			static JniMethodInfo   Class_getName;
 
 			public static unsafe JniObjectReference FindClass (string classname)
 			{
@@ -132,16 +113,59 @@ namespace Java.Interop
 				if (!type.IsValid)
 					return null;
 
+				if (Class_getName == null) {
+					lock (initLock) {
+						if (Class_getName == null) {
+							using (var t = new JniType ("java/lang/Class")) {
+								Class_getName   = t.GetInstanceMethod ("getName", "()Ljava/lang/String;");
+							}
+						}
+					}
+				}
+
+				JniRuntime.monodroid_log (JniRuntime.LogLevel.Warn, JniRuntime.LogCategories.Default, "GetJniTypeNameFromClass called");
 				var s = JniEnvironment.InstanceMethods.CallObjectMethod (type, Class_getName);
 				return JavaClassToJniType (Strings.ToString (ref s, JniObjectReferenceOptions.CopyAndDispose)!);
 			}
 
 			static string JavaClassToJniType (string value)
 			{
-				for (int i = 0; i < BuiltinMappings.Length; ++i) {
-					if (value == BuiltinMappings [i].Key)
-						return BuiltinMappings [i].Value;
+				if (String.Compare ("int", value, StringComparison.Ordinal) == 0) {
+					return "I";
 				}
+
+				if (String.Compare ("long", value, StringComparison.Ordinal) == 0) {
+					return "J";
+				}
+
+				if (String.Compare ("char", value, StringComparison.Ordinal) == 0) {
+					return "C";
+				}
+
+				if (String.Compare ("boolean", value, StringComparison.Ordinal) == 0) {
+					return "Z";
+				}
+
+				if (String.Compare ("byte", value, StringComparison.Ordinal) == 0) {
+					return "B";
+				}
+
+				if (String.Compare ("double", value, StringComparison.Ordinal) == 0) {
+					return "D";
+				}
+
+				if (String.Compare ("float", value, StringComparison.Ordinal) == 0) {
+					return "F";
+				}
+
+				if (String.Compare ("short", value, StringComparison.Ordinal) == 0) {
+					return "S";
+				}
+
+				if (String.Compare ("void", value, StringComparison.Ordinal) == 0) {
+					return "V";
+				}
+
 				return value.Replace ('.', '/');
 			}
 
